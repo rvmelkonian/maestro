@@ -26,8 +26,18 @@ module.exports = class Maestro {
 
 	transposePitchDown(originalPitch: number, transposeBy: number) {
 		let transposed = originalPitch - transposeBy;
-		if (transposed < 0) transposed = Math.abs(transposed);
-		if (transposed > 12) transposed = transposed - 12;
+		if (transposed < 0) {
+			console.log("transposed is less than 0", transposed);
+			transposed = transposed + 12 
+			console.log('transposed: corrected', transposed)
+			console.log('originalPitch :', originalPitch)
+		}
+		if (transposed > 12) {
+			console.log("transposed is greater than 12", transposed);
+			transposed = transposed - 12;
+			console.log('transposed: corrected', transposed)
+			console.log('originalPitch :', originalPitch)
+		}
 		return transposed;
 	}
 
@@ -64,7 +74,7 @@ module.exports = class Maestro {
 	}
 
 	rotateSetStrav() {
-		return flatten(this.findRotatedIntervals());
+		return this.findRotatedIntervals();
 	}
 
 	findRotatedIntervals() {
@@ -76,33 +86,38 @@ module.exports = class Maestro {
 			mutatedSet.push(firstPitch);
 			const newArray = [...mutatedSet];
 			const intervals = this.findIntervals(newArray);
-			const rotations = this.transposeRotatedIntervals(intervals, newArray);
-			result.push(rotations);
+			console.log({ intervals });
+			const plottedIntervals = this.plotIntervals(intervals);
+			result.push(plottedIntervals);
 			i++;
 		}
 		return result;
 	}
 
-	transposeRotatedIntervals(rotatedIntervals: any[], set: number[]) {
-		return rotatedIntervals.map((intervals, index) => {
-			let transpositions = [];
-			for (const [key, value] of Object.entries(intervals)) {
-				if (value === "up") {
-					const transposedPitch = this.transposePitchUp(
-						parseInt(key),
-						set[index]
+	plotIntervals(intervals: any) {
+		let pivotPitch = 0;
+		let result = [0];
+		result.push(
+			intervals.map((interval, index) => {
+				const key = Object.keys(interval);
+				const transposition = key[0];
+				const direction = interval[transposition];
+				if (direction === "up") {
+					pivotPitch = this.transposePitchUp(
+						pivotPitch,
+						parseInt(transposition)
 					);
-					transpositions.push(transposedPitch);
-				} else if (value === "down") {
-					const transposedPitch = this.transposePitchDown(
-						parseInt(key),
-						set[index]
+					return pivotPitch;
+				} else {
+					pivotPitch = this.transposePitchDown(
+						pivotPitch,
+						parseInt(transposition)
 					);
-					transpositions.push(transposedPitch)
+					return pivotPitch;
 				}
-			}
-			return transpositions;
-		});
+			})
+		);
+		return flatten(result);
 	}
 
 	moveLeft(set: number[]) {
